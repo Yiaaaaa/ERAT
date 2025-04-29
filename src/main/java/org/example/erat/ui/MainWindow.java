@@ -1,5 +1,8 @@
 package org.example.erat.ui;
 
+import org.example.erat.chart.ChartGenerator;
+import org.example.erat.dao.ReportDAO;
+import org.example.erat.model.ExperimentFile;
 import org.example.erat.model.Student;
 import org.example.erat.parser.ParserFactory;
 import org.example.erat.parser.FileParser;
@@ -9,7 +12,9 @@ import org.example.erat.exception.InvalidFileNameException;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MainWindow extends JFrame {
     private List<Student> students = new ArrayList<>();
@@ -72,7 +77,25 @@ public class MainWindow extends JFrame {
         });
 
         chartBtn.addActionListener(e -> {
-            // TODO: 使用 JFreeChart 绘制提交率趋势图
+            if (students.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "请先导入学生名单！");
+                return;
+            }
+
+            List<ExperimentFile> reports = new ReportDAO().loadReportsFromDirectory("reports/");
+            AnalysisService service = new AnalysisService();
+
+            try {
+                Map<String, Double> rates = service.analyzeSubmissionRates(students, reports);
+                if (rates.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "未找到任何实验记录！", "警告", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                ChartGenerator.generateLineChart(rates); // 调用图表生成
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "生成图表失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
         });
 
         JPanel panel = new JPanel(new BorderLayout());

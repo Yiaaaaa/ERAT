@@ -47,4 +47,25 @@ public class AnalysisService {
 
         return missingPerExp;
     }
+    // 返回 Map<实验编号, 提交率>
+    public Map<String, Double> analyzeSubmissionRates(List<Student> students, List<ExperimentFile> reports) {
+        Set<String> allExperiments = new HashSet<>();
+        for (ExperimentFile report : reports) {
+            allExperiments.add(report.getExperimentId());
+        }
+
+        Map<String, Double> submissionRates = new LinkedHashMap<>();
+        for (String expId : allExperiments) {
+            int submittedCount = 0;
+            for (Student student : students) {
+                boolean hasReport = reports.stream()
+                        .anyMatch(r -> r.getStudentId().equals(student.getStudentId())
+                                && r.getExperimentId().equals(expId));
+                if (hasReport) submittedCount++;
+            }
+            double rate = (double) submittedCount / students.size() * 100;
+            submissionRates.put(expId, rate);
+        }
+        return submissionRates;
+    }
 }
